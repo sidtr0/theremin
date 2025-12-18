@@ -28,11 +28,23 @@ while True:
     rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     pos = tracker.get_index_finger(rgb)
 
+    key = cv2.waitKey(1) & 0xFF
+    if key == ord('1'):
+        audio.waveform = "sine"
+    elif key == ord('2'):
+        audio.waveform = "square"
+    elif key == ord('3'):
+        audio.waveform = "saw"
+    elif key == ord('4'):
+        audio.waveform = "triangle"
+    elif key == 27:
+        break
+
     if pos:
         x, y = pos
         freq, vol = mapper.position_to_sound(x, y)
         audio.freq = freq_smoother.update(freq)
-        audio.volume = vol_smoother.update(vol)
+        audio.volume = 0.2
 
         h, w, _ = frame.shape
         px = int(x * w)

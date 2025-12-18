@@ -3,6 +3,6 @@ def map_range(val, in_min, in_max, out_min, out_max):
 
 class GestureMapper:
     def position_to_sound(self, x, y):
-        freq = map_range(x, 0, 1, 200, 2000)
+        freq = map_range(x, 0, 1, 0, 900)
         volume = map_range(y, 0, 1, 200, 2000)
         return freq, volume
