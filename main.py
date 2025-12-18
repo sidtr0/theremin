@@ -7,6 +7,7 @@ from control.smoothing import Smoother
 from audio.engine import AudioEngine
 from collections import deque
 from audio.note import freq_to_note
+from control.scale import quantize_freq
 
 camera = Camera()
 tracker = HandTracker()
@@ -20,6 +21,8 @@ audio.start()
 
 trail = deque(maxlen=30)
 
+current_scale = "pentatonic"
+
 while True:
     frame = camera.read()
     if frame is None:
@@ -30,21 +33,36 @@ while True:
 
     key = cv2.waitKey(1) & 0xFF
     if key == ord('1'):
-        audio.waveform = "sine"
+        audio.set_waveform("sine")
     elif key == ord('2'):
-        audio.waveform = "square"
+        audio.set_waveform("square")
     elif key == ord('3'):
-        audio.waveform = "saw"
+        audio.set_waveform("saw")
     elif key == ord('4'):
-        audio.waveform = "triangle"
-    elif key == 27:
-        break
+        audio.set_waveform("triangle")
+
+    if key == ord('q'):
+        current_scale = "pentatonic"
+    elif key == ord('w'):
+        current_scale = "major"
+    elif key == ord('e'):
+        current_scale = "minor"
+    elif key == ord('r'):
+        current_scale = "blues"
 
     if pos:
         x, y = pos
-        freq, vol = mapper.position_to_sound(x, y)
-        audio.freq = freq_smoother.update(freq)
+        freq, _ = mapper.position_to_sound(x, y)
+
+        quantized = quantize_freq(freq, scale=current_scale, root=60)
+        audio.freq = freq_smoother.update(quantized)
         audio.volume = 0.2
+
+        # ✅ Y axis → vibrato depth
+        if y > 0.8:
+            audio.vibrato_depth = 0.0
+        else:
+            audio.vibrato_depth = ((1 - y) ** 2) * 20.0
 
         h, w, _ = frame.shape
         px = int(x * w)
@@ -59,7 +77,7 @@ while True:
 
         cv2.putText(
             frame,
-            f"{int(audio.freq)} Hz / {str(note)}",
+            f"{int(audio.freq)} Hz / {str(note)} / Scale: {current_scale}",
             (10, 30),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.7,

@@ -10,6 +10,9 @@ class AudioEngine:
         self.phase = 0
         self.samplerate = samplerate
         self.waveform_fn = oscillators.saw
+        self.vibrato_depth = 0.0
+        self.vibrato_rate = 6.0
+        self.time = 0
 
         self.stream = sd.OutputStream(
             callback=self.callback,
@@ -31,9 +34,10 @@ class AudioEngine:
 
     def callback(self, outdata, frames, time, status):
         t = (np.arange(frames) + self.phase) / self.samplerate
-
-        wave = self.waveform_fn(self.freq, t)  # ✅ always callable
-        # wave = np.tanh(wave)                   # soft clip
+        vibrato = self.vibrato_depth * np.sin(2 * np.pi * self.vibrato_rate * t)
+        freq = self.freq + vibrato
+        wave = self.waveform_fn(freq, t)  # ✅ always callable
+        # wave = np.tanh(wave)            # soft clip
 
         outdata[:] = (wave * self.volume).reshape(-1, 1)
         self.phase += frames
